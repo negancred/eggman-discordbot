@@ -5,7 +5,8 @@ import asyncio
 YDL_OPTIONS = {
     "format": "bestaudio/best",
     "quiet": True,
-    "default_search": "ytsearch"
+    "noplaylist": True,
+    "default_search": "ytmusicsearch", 
 }
 
 FFMPEG_OPTIONS = {
@@ -22,11 +23,13 @@ async def extract_audio(query: str):
     def _extract():
         with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
             info = ydl.extract_info(query, download=False)
+
             if "entries" in info:
                 info = info["entries"][0]
+
             return info["url"], info["title"]
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, _extract)
 
 
