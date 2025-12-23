@@ -28,12 +28,6 @@ def save_data(data):
 
 
 class Leveling(commands.Cog):
-    """Simple XP/Leveling system.
-
-    - Awards XP for normal messages (5-15 XP).
-    - Persists per-guild, per-user XP and level to `data/leveling.json`.
-    - Provides `/xp` and `/profile` slash commands.
-    """
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -47,7 +41,6 @@ class Leveling(commands.Cog):
         return self.data[g][u]
 
     def _xp_for_next_level(self, level: int):
-        # Simple linear scaling: next level requires 100 * (level + 1) XP
         return 100 * (level + 1)
 
     def _add_xp(self, guild_id: int, user_id: int, amount: int):
@@ -68,7 +61,6 @@ class Leveling(commands.Cog):
         if not message.guild:
             return
 
-        # Award XP for contentful messages
         xp_gain = random.randint(5, 15)
         leveled, new_level = self._add_xp(message.guild.id, message.author.id, xp_gain)
 
@@ -82,7 +74,6 @@ class Leveling(commands.Cog):
                     )
                 )
             except Exception:
-                # Don't fail the listener if sending fails
                 pass
 
     @app_commands.command(name="xp")
@@ -126,7 +117,6 @@ class Leveling(commands.Cog):
     @app_commands.command(name="profile")
     @app_commands.describe(user="User to view (defaults to you)")
     async def profile(self, interaction: discord.Interaction, user: discord.Member = None):
-        """View a user's profile with join date, level and XP."""
         if not interaction.guild:
             await interaction.response.send_message("This command must be used in a server.", ephemeral=True)
             return
@@ -175,7 +165,6 @@ class Leveling(commands.Cog):
         e.set_footer(text=f"{next_xp} XP to next level")
 
         await interaction.response.send_message(embed=e)
-
 
 
 async def setup(bot: commands.Bot):
