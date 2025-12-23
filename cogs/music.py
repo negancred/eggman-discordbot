@@ -102,9 +102,9 @@ class Music(commands.Cog):
 
         try:
             url, title = await extract_audio(query)
-        except Exception:
+        except Exception as e:
             await interaction.followup.send(
-                embed=self.error_embed("Eggman couldn’t grab that tune 😢"),
+                embed=self.error_embed(f"Error: `{e}`"),
                 ephemeral=True
             )
             return
