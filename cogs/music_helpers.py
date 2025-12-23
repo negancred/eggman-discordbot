@@ -2,11 +2,14 @@ import discord
 import yt_dlp
 import asyncio
 
+import discord
+import yt_dlp
+import asyncio
+
 YDL_OPTIONS = {
     "format": "bestaudio/best",
     "quiet": True,
     "noplaylist": True,
-    "default_search": "ytmusicsearch", 
 }
 
 FFMPEG_OPTIONS = {
@@ -21,8 +24,10 @@ FFMPEG_OPTIONS = {
 
 async def extract_audio(query: str):
     def _extract():
+        search = f"ytmusicsearch1:{query}"
+
         with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
-            info = ydl.extract_info(query, download=False)
+            info = ydl.extract_info(search, download=False)
 
             if "entries" in info:
                 info = info["entries"][0]

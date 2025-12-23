@@ -136,6 +136,12 @@ class Music(commands.Cog):
     @app_commands.command(name="play")
     async def play(self, interaction: discord.Interaction, query: str):
         await self.handle_play(interaction, query)
+    
+    
+    @app_commands.command(name="version")
+    async def play(self, interaction: discord.interaction):
+        await interaction.response.send("1.1")
+
 
     @app_commands.command(name="queue")
     async def queue_cmd(self, interaction: discord.Interaction, query: str):
