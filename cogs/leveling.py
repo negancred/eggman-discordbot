@@ -96,14 +96,32 @@ class Leveling(commands.Cog):
         next_xp = self._xp_for_next_level(rec["level"]) - rec["xp"]
 
         e = discord.Embed(
-            title=f"{interaction.user.display_name}'s XP",
-            color=discord.Color.blurple()
+        title="-- XP Overview --",
+        description=f"**{interaction.user.display_name}**",
+        color=discord.Color.blurple()
         )
-        e.add_field(name="Level", value=str(rec["level"]))
-        e.add_field(name="XP", value=f"{rec['xp']} / {self._xp_for_next_level(rec['level'])}")
-        e.set_footer(text=f"{next_xp} XP to next level")
+
+        progress_bar_length = 10
+        progress = int((rec["xp"] / self._xp_for_next_level(rec["level"])) * progress_bar_length)
+        bar = "🟩" * progress + "⬛" * (progress_bar_length - progress)
+
+        e.add_field(
+            name="🏆 Level",
+            value=f"**{rec['level']}**",
+            inline=True
+        )
+
+        e.add_field(
+            name="✨ XP Progress",
+            value=f"`{bar}`\n{rec['xp']} / {self._xp_for_next_level(rec['level'])} XP",
+            inline=False
+        )
+
+        e.set_thumbnail(url=interaction.user.display_avatar.url)
+        e.set_footer(text=f"{next_xp} XP needed for next level")
 
         await interaction.response.send_message(embed=e, ephemeral=True)
+
 
     @app_commands.command(name="profile")
     @app_commands.describe(user="User to view (defaults to you)")
@@ -118,19 +136,46 @@ class Leveling(commands.Cog):
         next_xp = self._xp_for_next_level(rec["level"]) - rec["xp"]
 
         e = discord.Embed(
-            title=f"{member.display_name}'s Profile",
-            color=discord.Color.gold()
+        title="👤 User Profile",
+        description=f"**{member.display_name}**",
+        color=discord.Color.gold()
         )
-        joined = member.joined_at.strftime("%Y-%m-%d %H:%M UTC") if member.joined_at else "Unknown"
-        e.add_field(name="Name", value=str(member), inline=True)
-        e.add_field(name="Joined", value=joined, inline=True)
-        e.add_field(name="Level", value=str(rec["level"]), inline=True)
-        e.add_field(name="XP", value=f"{rec['xp']} / {self._xp_for_next_level(rec['level'])}", inline=True)
-        e.set_thumbnail(url=member.display_avatar.url)
 
+        joined = member.joined_at.strftime("%B %d, %Y") if member.joined_at else "Unknown"
+
+        progress_bar_length = 10
+        progress = int((rec["xp"] / self._xp_for_next_level(rec["level"])) * progress_bar_length)
+        bar = "🟩" * progress + "⬛" * (progress_bar_length - progress)
+
+        e.add_field(
+            name="📛 Username",
+            value=str(member),
+            inline=True
+        )
+
+        e.add_field(
+            name="📅 Joined Server",
+            value=joined,
+            inline=True
+        )
+
+        e.add_field(
+            name="🏆 Level",
+            value=f"**{rec['level']}**",
+            inline=True
+        )
+
+        e.add_field(
+            name="✨ XP Progress",
+            value=f"`{bar}`\n{rec['xp']} / {self._xp_for_next_level(rec['level'])} XP",
+            inline=False
+        )
+
+        e.set_thumbnail(url=member.display_avatar.url)
         e.set_footer(text=f"{next_xp} XP to next level")
 
         await interaction.response.send_message(embed=e)
+
 
 
 async def setup(bot: commands.Bot):
