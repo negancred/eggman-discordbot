@@ -139,7 +139,7 @@ class Music(commands.Cog):
     
     
     @app_commands.command(name="version")
-    async def play(self, interaction: discord.interaction):
+    async def version(self, interaction: discord.interaction):
         await interaction.response.send("1.1")
 
 
