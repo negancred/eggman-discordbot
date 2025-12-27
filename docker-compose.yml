@@ -1,12 +1,18 @@
-
 services:
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:latest
+    container_name: lavalink
+    restart: unless-stopped
+    volumes:
+      - ./lavalink/application.yml:/opt/Lavalink/application.yml
+    ports:
+      - "2333:2333"
+
   eggman:
     build: .
     container_name: eggman
-    restart: unless-stopped
-    env_file: .env
+    depends_on:
+      - lavalink
     environment:
-      - DISCORD_TOKEN
-    volumes:
-      - ./data:/app/data
-    # No ports required for a Discord bot
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+    restart: unless-stopped
