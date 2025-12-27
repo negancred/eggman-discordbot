@@ -7,6 +7,7 @@ from collections import deque
 
 from .music_helpers import extract_audio, play_next, FFMPEG_OPTIONS
 
+
 JOYFUL_LINES = [
     "HO HO HO! Let’s gooo! 🎄🎶",
     "Eggman is vibing! 🎧",
@@ -24,22 +25,24 @@ QUEUE_LINES = [
 
 
 class Music(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.queues = {}
+        self.queues: dict[int, deque] = {}
 
-    def get_queue(self, guild_id):
+    def get_queue(self, guild_id: int) -> deque:
         self.queues.setdefault(guild_id, deque())
         return self.queues[guild_id]
-    
-    def error_embed(self, msg):
+
+    # ───────── EMBEDS ─────────
+
+    def error_embed(self, msg: str) -> discord.Embed:
         return discord.Embed(
             title="❌ Eggman tripped!",
             description=msg,
             color=discord.Color.red()
         )
 
-    def joyful_embed(self, title, msg):
+    def joyful_embed(self, title: str, msg: str) -> discord.Embed:
         e = discord.Embed(
             title=title,
             description=msg,
@@ -48,7 +51,7 @@ class Music(commands.Cog):
         e.set_footer(text=random.choice(JOYFUL_LINES))
         return e
 
-    def queue_embed(self, title, msg):
+    def queue_embed(self, title: str, msg: str) -> discord.Embed:
         e = discord.Embed(
             title=title,
             description=msg,
@@ -57,24 +60,9 @@ class Music(commands.Cog):
         e.set_footer(text=random.choice(QUEUE_LINES))
         return e
 
-    def queue_list_embed(self, lines):
-        return discord.Embed(
-            title="📜 Eggman’s Queue",
-            description="\n".join(lines),
-            color=discord.Color.gold()
-        )
+    # ───────── CORE PLAY LOGIC ─────────
 
-    def _after_play(self, guild_id: int):
-        guild = self.bot.get_guild(guild_id)
-        if not guild:
-            return
-
-        queue = self.get_queue(guild_id)
-        coro = play_next(self.bot, guild, queue)
-        asyncio.run_coroutine_threadsafe(coro, self.bot.loop)
-
-
-    async def handle_play(self, interaction, query):
+    async def handle_play(self, interaction: discord.Interaction, query: str):
         user_voice = interaction.user.voice
         if not user_voice:
             await interaction.response.send_message(
@@ -83,13 +71,13 @@ class Music(commands.Cog):
             )
             return
 
-        voice = interaction.guild.voice_client
         channel = user_voice.channel
+        voice = interaction.guild.voice_client
 
         if voice and voice.channel != channel:
             await interaction.response.send_message(
                 embed=self.error_embed(
-                    f"I'm busy singing at **#{voice.channel.name}** 🎤"
+                    f"I'm already singing in **#{voice.channel.name}** 🎤"
                 ),
                 ephemeral=True
             )
@@ -102,9 +90,9 @@ class Music(commands.Cog):
 
         try:
             url, title = await extract_audio(query)
-        except Exception as e:
+        except Exception:
             await interaction.followup.send(
-                embed=self.error_embed(f"Error: `{e}`"),
+                embed=self.error_embed("Eggman couldn’t grab that tune 😢"),
                 ephemeral=True
             )
             return
@@ -123,7 +111,10 @@ class Music(commands.Cog):
             source = discord.FFmpegPCMAudio(url, **FFMPEG_OPTIONS)
             voice.play(
                 source,
-                after=lambda _: self._after_play(interaction.guild.id)
+                after=lambda _: self.bot.loop.call_soon_threadsafe(
+                    asyncio.create_task,
+                    play_next(self.bot, interaction.guild, queue)
+                )
             )
 
             await interaction.followup.send(
@@ -133,21 +124,13 @@ class Music(commands.Cog):
                 )
             )
 
+    # ───────── COMMANDS ─────────
+
     @app_commands.command(name="play")
     async def play(self, interaction: discord.Interaction, query: str):
         await self.handle_play(interaction, query)
-    
-    
-    @app_commands.command(name="version")
-    async def version(self, interaction: discord.Interaction):
-        await interaction.response.send("1.1")
-
 
     @app_commands.command(name="queue")
-    async def queue_cmd(self, interaction: discord.Interaction, query: str):
-        await self.handle_play(interaction, query)
-
-    @app_commands.command(name="queue_list")
     async def queue_list(self, interaction: discord.Interaction):
         queue = self.get_queue(interaction.guild.id)
 
@@ -167,7 +150,11 @@ class Music(commands.Cog):
         ]
 
         await interaction.response.send_message(
-            embed=self.queue_list_embed(lines)
+            embed=discord.Embed(
+                title="📜 Eggman’s Queue",
+                description="\n".join(lines),
+                color=discord.Color.gold()
+            )
         )
 
     @app_commands.command(name="skip")
@@ -182,10 +169,7 @@ class Music(commands.Cog):
 
         voice.stop()
         await interaction.response.send_message(
-            embed=self.joyful_embed(
-                "⏭ Skipped!",
-                "Straight to the next bop! 🎶"
-            )
+            embed=self.joyful_embed("⏭ Skipped!", "Next bop incoming 🎶")
         )
 
     @app_commands.command(name="stop")
@@ -202,48 +186,9 @@ class Music(commands.Cog):
         voice.stop()
 
         await interaction.response.send_message(
-            embed=self.joyful_embed(
-                "🛑 All Stopped!",
-                "Eggman bows dramatically 🎩"
-            )
-        )
-
-    @app_commands.command(name="pause")
-    async def pause(self, interaction: discord.Interaction):
-        voice = interaction.guild.voice_client
-        if not voice or not voice.is_playing():
-            await interaction.response.send_message(
-                embed=self.error_embed("Nothing to pause 😅"),
-                ephemeral=True
-            )
-            return
-
-        voice.pause()
-        await interaction.response.send_message(
-            embed=self.joyful_embed(
-                "⏸ Paused!",
-                "Freezing the vibes ❄️"
-            )
-        )
-
-    @app_commands.command(name="resume")
-    async def resume(self, interaction: discord.Interaction):
-        voice = interaction.guild.voice_client
-        if not voice or not voice.is_paused():
-            await interaction.response.send_message(
-                embed=self.error_embed("Nothing to resume 🤔"),
-                ephemeral=True
-            )
-            return
-
-        voice.resume()
-        await interaction.response.send_message(
-            embed=self.joyful_embed(
-                "▶️ Resumed!",
-                "Back in rhythm! 🎉"
-            )
+            embed=self.joyful_embed("🛑 All Stopped!", "Eggman bows 🎩")
         )
 
 
-async def setup(bot):
+async def setup(bot: commands.Bot):
     await bot.add_cog(Music(bot))

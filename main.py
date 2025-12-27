@@ -2,6 +2,9 @@ import discord
 from discord.ext import commands
 import asyncio
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 intents = discord.Intents.default()
@@ -24,7 +27,7 @@ bot = Eggman()
 
 @bot.event
 async def on_ready():
-    print(f"Eggman is online as {bot.user}")
+    print(f"Eggman is online as {bot.user} as s1.0")
 
 token = os.getenv("DISCORD_TOKEN")
 if not token:

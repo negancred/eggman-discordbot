@@ -2,14 +2,11 @@ import discord
 import yt_dlp
 import asyncio
 
-import discord
-import yt_dlp
-import asyncio
-
 YDL_OPTIONS = {
     "format": "bestaudio/best",
     "quiet": True,
     "noplaylist": True,
+    "default_search": "ytsearch",
 }
 
 FFMPEG_OPTIONS = {
@@ -23,33 +20,43 @@ FFMPEG_OPTIONS = {
 
 
 async def extract_audio(query: str):
-    def _extract():
-        search = f"ytmusicsearch1:{query}"
-
-        with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
-            info = ydl.extract_info(search, download=False)
-
-            if "entries" in info:
-                info = info["entries"][0]
-
-            return info["url"], info["title"]
-
     loop = asyncio.get_running_loop()
+
+    def _extract():
+        with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
+            info = ydl.extract_info(f"ytsearch1:{query}", download=False)
+
+            if not info or "entries" not in info or not info["entries"]:
+                raise Exception("No results found")
+
+            info = info["entries"][0]
+
+            # Prefer direct HTTP(S) stream URLs
+            if info.get("url", "").startswith(("http://", "https://")):
+                return info["url"], info.get("title", "Unknown Title")
+
+            for f in info.get("formats", []):
+                url = f.get("url")
+                if url and url.startswith(("http://", "https://")):
+                    return url, info.get("title", "Unknown Title")
+
+            raise Exception("No playable stream URL found")
+
     return await loop.run_in_executor(None, _extract)
 
 
 async def play_next(bot, guild, queue):
     voice = guild.voice_client
-    if not voice or not queue:
+    if not voice or voice.is_playing() or not queue:
         return
 
-    url, _ = queue.popleft()
+    url, title = queue.popleft()
     source = discord.FFmpegPCMAudio(url, **FFMPEG_OPTIONS)
 
-    def after(_):
-        asyncio.run_coroutine_threadsafe(
-            play_next(bot, guild, queue),
-            bot.loop
+    voice.play(
+        source,
+        after=lambda _: bot.loop.call_soon_threadsafe(
+            asyncio.create_task,
+            play_next(bot, guild, queue)
         )
-
-    voice.play(source, after=after)
+    )

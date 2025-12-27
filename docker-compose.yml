@@ -1,0 +1,12 @@
+
+services:
+  eggman:
+    build: .
+    container_name: eggman
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DISCORD_TOKEN
+    volumes:
+      - ./data:/app/data
+    # No ports required for a Discord bot

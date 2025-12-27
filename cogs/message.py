@@ -33,8 +33,6 @@ class MsgGroup(app_commands.Group):
 
 
 class MessageCog(commands.Cog):
-    """Cog to register the `msg` command group on the bot's command tree."""
-
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
