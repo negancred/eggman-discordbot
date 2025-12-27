@@ -17,7 +17,6 @@ class Music(commands.Cog):
             )
             return
 
-        # Connect if not connected
         if not interaction.guild.voice_client:
             await interaction.user.voice.channel.connect(
                 cls=wavelink.Player
@@ -27,7 +26,6 @@ class Music(commands.Cog):
 
         clean_query = normalize_query(query)
 
-        # 🔒 SoundCloud-first search
         tracks = await wavelink.Playable.search(
             clean_query,
             source=wavelink.TrackSource.SoundCloud
@@ -77,7 +75,6 @@ def normalize_query(query: str) -> str:
     for word in blacklist:
         q = q.replace(word, "")
 
-    # collapse multiple spaces
     q = " ".join(q.split())
     return q.strip()
 

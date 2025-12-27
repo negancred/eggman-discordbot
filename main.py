@@ -7,26 +7,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# --------------------
-# Logging (Docker-safe)
-# --------------------
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 log = logging.getLogger("eggman")
 
-# --------------------
-# Discord Intents
-# --------------------
+
+
 intents = discord.Intents.default()
-intents.voice_states = True   # REQUIRED for voice
-# message_content not required since you use slash commands
+intents.voice_states = True  
 
 
-# --------------------
-# Bot Class
-# --------------------
 class Eggman(commands.Bot):
     def __init__(self):
         super().__init__(
@@ -35,22 +27,12 @@ class Eggman(commands.Bot):
         )
 
     async def setup_hook(self):
-        """
-        This runs BEFORE on_ready.
-        Perfect place to:
-        - connect to Lavalink
-        - load cogs
-        - sync slash commands
-        """
 
-        # --------------------
-        # Connect to Lavalink
-        # --------------------
         log.info("Connecting to Lavalink...")
 
         node = wavelink.Node(
-            uri="http://lavalink:2333",      # Docker service name
-            password="eggmanpassword"        # MUST match application.yml
+            uri="http://lavalink:2333",  
+            password="eggmanpassword"      
         )
 
         await wavelink.Pool.connect(
@@ -60,25 +42,14 @@ class Eggman(commands.Bot):
 
         log.info("CONNECTED TO LAVALINK")
 
-        # --------------------
-        # Load Cogs
-        # --------------------
         await self.load_extension("cogs.music")
         await self.load_extension("cogs.leveling")
         await self.load_extension("cogs.message")
 
         log.info("All cogs loaded")
-
-        # --------------------
-        # Sync Slash Commands
-        # --------------------
         await self.tree.sync()
         log.info("Slash commands synced")
 
-
-# --------------------
-# Bot Startup
-# --------------------
 bot = Eggman()
 
 @bot.event
