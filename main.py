@@ -17,6 +17,8 @@ log = logging.getLogger("eggman")
 
 intents = discord.Intents.default()
 intents.voice_states = True  
+intents.message_content = True
+intents.messages = True
 
 
 class Eggman(commands.Bot):
@@ -54,7 +56,7 @@ bot = Eggman()
 
 @bot.event
 async def on_ready():
-    log.info("Eggman is online as %s (v1.1)", bot.user)
+    log.info("Eggmanss is online as %s (v1.4)", bot.user)
 
 
 token = os.getenv("DISCORD_TOKEN")

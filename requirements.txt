@@ -2,3 +2,4 @@ discord.py>=2.3.2
 PyNaCl
 python-dotenv
 wavelink
+aiohttp
