@@ -11,8 +11,8 @@ services:
   eggman:
     build: .
     container_name: eggman
+    restart: unless-stopped
     depends_on:
       - lavalink
-    environment:
-      - DISCORD_TOKEN=${DISCORD_TOKEN}
-    restart: unless-stopped
+    env_file:
+      - .env
